@@ -32,3 +32,8 @@ let rec parse_lines_to_users (lines: (string * string) list) : data_file =
 ;;
 
 parse_lines_to_users(lines);;
+
+let read_and_parse_file filename =
+  let lines = read_data_from_file filename in
+  parse_lines_to_users lines
+;;

@@ -23,6 +23,7 @@ let rec remove_duplicates (pairs: (string * string) list) : (string * string) li
 
 let lines: (string * string) list = remove_duplicates (read_data_from_file "tools/test.txt");;
 
+(* Main function to call *)
 let rec parse_lines_to_users (lines: (string * string) list) : data_file =
   if lines = [] then []
   else

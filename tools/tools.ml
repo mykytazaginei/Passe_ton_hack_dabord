@@ -1,3 +1,7 @@
+#use "topfind";;
+#require "cryptokit";;
+#require "base64";;
+
 let read_data_from_file file =
   let f = open_in file in
   let rec aux acc =
@@ -10,13 +14,7 @@ let read_data_from_file file =
       close_in f;
     List.rev acc
   in
-  aux [];;
-
-
-#use "topfind";;
-#require "cryptokit";;
-#require "base64";;
-  
+  aux [];;  
   
 let hash_password pwd =
   Base64.encode_exn(Cryptokit.hash_string (Cryptokit.Hash.sha256 ()) pwd)

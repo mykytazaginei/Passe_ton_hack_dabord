@@ -25,7 +25,7 @@ let remove_duplicates (data: file_data) : file_data =
     let current = List.nth data !i in
     let is_duplicate = ref false in
     let j = ref 0 in
-    
+
     (* Check if this login already exists in result *)
     while !j < List.length !result do
       let existing = List.nth !result !j in
@@ -33,11 +33,11 @@ let remove_duplicates (data: file_data) : file_data =
         is_duplicate := true;
       j := !j + 1
     done;
-    
+
     (* Add to result only if not a duplicate *)
     if not !is_duplicate then
       result := current :: !result;
-    
+
     i := !i + 1
   done;
   !result
@@ -55,76 +55,174 @@ let read_and_parse_file (filename : string) : file_data =
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont
 identiques *)
 
-(* Function to merge data from multiple files *)
 let merge_data_from_several_files (files: string list) : file_data =
   let result = ref [] in
   let i = ref 0 in
-  
+
   while !i < List.length files do
     let file = List.nth files !i in
     let file_data = read_and_parse_file file in
-    
-    (* Append current file's data to result *)
+
     let j = ref 0 in
     while !j < List.length file_data do
       let entry = List.nth file_data !j in
       result := entry :: !result;
       j := !j + 1
     done;
-    
     i := !i + 1
   done;
-  
   !result
 ;;
 
-let group_by_login (data: file_data) : (string * key_value_list) list =
+(* Helper function to create a list of unique logins *)
+let get_unique_logins (data: file_data) : string list =
   let result = ref [] in
   let i = ref 0 in
-  
+
   while !i < List.length data do
-    let entry = List.nth data !i in
-    let found = ref false in
+    let current = List.nth data !i in
+    let is_duplicate = ref false in
     let j = ref 0 in
-    
-    (* Check if login already exists in result *)
+
     while !j < List.length !result do
-      let (login, passwords) = List.nth !result !j in
-      if login = entry.login then begin
-        (* Update existing entry *)
-        let new_passwords = (entry.login, entry.password) :: passwords in
-        result := !result @ [(login, new_passwords)];
-        found := true;
-      end;
+      if current.login = List.nth !result !j then
+        is_duplicate := true;
       j := !j + 1
     done;
-    
-    (* If login not found, add new entry *)
-    if not !found then
-      result := !result @ [(entry.login, [(entry.login, entry.password)])];
-    
+
+    if not !is_duplicate then
+      result := current.login :: !result;
     i := !i + 1
   done;
-  
   !result
 ;;
-(*
-(* Update main analysis function with detailed output *)
-let analyze_data_leaks (filenames: string list) =
-  let all_data = merge_data_from_several_files filenames in
-  let grouped = group_by_login all_data in
-  let duplicates = analyze_duplicates grouped in
-  List.iter (fun (login, pass_sources, same_password) ->
-    Printf.printf "\nLogin '%s' found in %d leaks:\n" login (List.length pass_sources);
-    List.iter (fun (pass, source) ->
-      Printf.printf "- File: %s, Password: %s\n" source pass
-    ) pass_sources;
-    Printf.printf "Passwords are %s\n" (if same_password then "identical" else "different");
-    Printf.printf "-------------------------\n"
-  ) duplicates
+
+(* Helper function to get all passwords for a login *)
+let get_passwords_for_login (login: string) (data: file_data) : string list =
+  let result = ref [] in
+  let i = ref 0 in
+
+  while !i < List.length data do
+    let entry = List.nth data !i in
+    if entry.login = login then
+      result := entry.password :: !result;
+    i := !i + 1
+  done;
+  !result
 ;;
 
-(* Example usage *)
-let () = analyze_data_leaks ["tools/tetedamis01.txt"; "tools/tetedamis02.txt"];;
-*)
+(* Helper function to check if all passwords in a list are identical *)
+let are_passwords_identical (passwords: string list) : bool =
+  if List.length passwords <= 1 then true
+  else
+    let first_password = List.hd passwords in
+    let is_identical = ref true in
+    let i = ref 1 in
 
+    while !i < List.length passwords do
+      if List.nth passwords !i <> first_password then
+        is_identical := false;
+      i := !i + 1
+    done;
+    !is_identical
+;;
+
+(* Main function to analyze data leaks *)
+let analyze_data_leaks (filenames: string list) : unit =
+  let all_data = merge_data_from_several_files filenames in
+  let unique_logins = get_unique_logins all_data in
+  let i = ref 0 in
+
+  while !i < List.length unique_logins do
+    let login = List.nth unique_logins !i in
+    let passwords = get_passwords_for_login login all_data in
+
+    if List.length passwords > 1 then begin
+      Printf.printf "\nLogin '%s' found in multiple leaks:\n" login;
+      let j = ref 0 in
+      while !j < List.length passwords do
+        Printf.printf "Password: %s\n" (List.nth passwords !j);
+        j := !j + 1
+      done;
+
+      let identical = are_passwords_identical passwords in
+      Printf.printf "Passwords are %s\n"
+        (if identical then "identical" else "different");
+      Printf.printf "-------------------------\n";
+    end;
+
+    i := !i + 1
+  done
+;;
+
+(* analyze_data_leaks ["tools/test.txt"; "tools/test2.txt"];; *)
+
+(* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données
+et savoir à quels logins ils sont associés ; *)
+
+let analyze_shared_passwords (filenames: string list) : unit =
+  Printf.printf "Starting analysis...\n";
+  
+  (* Get all data from files *)
+  Printf.printf "Loading data from files...\n";
+  let all_data = merge_data_from_several_files filenames in
+  Printf.printf "Loaded %d total entries\n" (List.length all_data);
+  
+  (* Recursive function to find or add group *)
+  let rec find_group (password: string) (login: string) (groups: (string * string list) list) : (string * string list) list =
+    if groups = [] then
+      [(password, [login])]
+    else 
+      let (pass, logins) = List.hd groups in
+      if pass = password then
+        (pass, login :: logins) :: List.tl groups
+      else
+        (pass, logins) :: find_group password login (List.tl groups)
+  in
+  
+  (* Recursive function to group passwords *)
+  let rec group_passwords (data: file_data) (groups: (string * string list) list) : (string * string list) list =
+    if data = [] then 
+      groups
+    else
+      let entry = List.hd data in
+      group_passwords (List.tl data) (find_group entry.password entry.login groups)
+  in
+  
+  Printf.printf "Creating password groups...\n";
+  let password_groups = group_passwords all_data [] in
+  Printf.printf "Finished creating groups. Found %d unique passwords.\n" (List.length password_groups);
+  
+  (* Recursive function to print logins *)
+  let rec print_logins (logins: string list) : unit =
+    if logins = [] then
+      Printf.printf "-------------------------\n"
+    else begin 
+      Printf.printf "- %s\n" (List.hd logins);
+      print_logins (List.tl logins)
+    end
+  in
+  
+  (* Recursive function to print results *)
+  let rec print_results (groups: (string * string list) list) (shared_count: int) : unit =
+    if groups = [] then
+      if shared_count = 0 then
+        Printf.printf "No shared passwords found.\n"
+      else
+        Printf.printf "Found %d shared passwords.\n" shared_count
+    else 
+      let (password, logins) = List.hd groups in
+      if List.length logins > 1 then begin
+        Printf.printf "\nPassword '%s' is shared by these logins:\n" password;
+        print_logins logins;
+        print_results (List.tl groups) (shared_count + 1)
+      end else
+        print_results (List.tl groups) shared_count
+  in
+  
+  Printf.printf "\nAnalyzing shared passwords...\n";
+  Printf.printf "-------------------------\n";
+  print_results password_groups 0
+;;
+
+analyze_shared_passwords ["tools/test.txt"; "tools/test2.txt"];;

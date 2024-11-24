@@ -1,14 +1,14 @@
 #use "tools/tools.ml";;
 
-(* Ex. 1 : Fusionner dans une mˆeme variable les informations contenues dans les fichiers correspondant `a
-plusieurs fuites d’une mˆeme application en ´eliminant les doublons (mˆeme login et mˆeme mot de
-passe) *)
-
-(* Update type to include file source *)
-
-type user_info = { login : string; password : string;};;
-type file_data = user_info list;;
-type key_value_list = (string * string) list;;
+type login = string
+type password = string
+type filename = string
+type user_info = {
+  login: login;
+  password: password;
+}
+type file_data = user_info list
+type key_value_list = (login * password) list
 
 let rec parse_lines_to_users (lines: key_value_list) : file_data =
   if lines = [] then []
@@ -55,7 +55,7 @@ let read_and_parse_file (filename : string) : file_data =
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont
 identiques *)
 
-let merge_data_from_several_files (files: string list) : file_data =
+let merge_data_from_several_files (files: filename list) : file_data =
   let result = ref [] in
   let i = ref 0 in
 
@@ -75,7 +75,7 @@ let merge_data_from_several_files (files: string list) : file_data =
 ;;
 
 (* Helper function to create a list of unique logins *)
-let get_unique_logins (data: file_data) : string list =
+let get_unique_logins (data: file_data) : login list =
   let result = ref [] in
   let i = ref 0 in
 
@@ -98,7 +98,7 @@ let get_unique_logins (data: file_data) : string list =
 ;;
 
 (* Helper function to get all passwords for a login *)
-let get_passwords_for_login (login: string) (data: file_data) : string list =
+let get_passwords_for_login (login: login) (data: file_data) : password list =
   let result = ref [] in
   let i = ref 0 in
 
@@ -112,7 +112,7 @@ let get_passwords_for_login (login: string) (data: file_data) : string list =
 ;;
 
 (* Helper function to check if all passwords in a list are identical *)
-let are_passwords_identical (passwords: string list) : bool =
+let are_passwords_identical (passwords: password list) : bool =
   if List.length passwords <= 1 then true
   else
     let first_password = List.hd passwords in
@@ -128,7 +128,7 @@ let are_passwords_identical (passwords: string list) : bool =
 ;;
 
 (* Main function to analyze data leaks *)
-let analyze_data_leaks (filenames: string list) : unit =
+let analyze_data_leaks (filenames: filename list) : unit =
   let all_data = merge_data_from_several_files filenames in
   let unique_logins = get_unique_logins all_data in
   let i = ref 0 in
@@ -160,8 +160,8 @@ let analyze_data_leaks (filenames: string list) : unit =
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données
 et savoir à quels logins ils sont associés ; *)
 (*get unique passwords*)
-let get_unique_passwords (data: file_data) : string list =
-  let result: string list ref = ref [] in
+let get_unique_passwords (data: file_data) : password list =
+  let result: password list ref = ref [] in
   let i: int ref = ref 0 in
 
   while !i < List.length data do
@@ -182,8 +182,8 @@ let get_unique_passwords (data: file_data) : string list =
   !result
 ;;
 
-let get_login_for_password (password: string) (data: file_data) : string list =
-  let result: string list ref = ref [] in
+let get_login_for_password (password: password) (data: file_data) : login list =
+  let result: login list ref = ref [] in
   let i: int ref = ref 0 in
   while !i < List.length data do
     let entry: user_info = List.nth data !i in
@@ -194,15 +194,15 @@ let get_login_for_password (password: string) (data: file_data) : string list =
   !result
 ;;
 
-let analyze_passwords_hashed(files : string list): unit = 
-  let all_data: file_data = merge_data_from_several_files(files) in 
-  let unique_passwords: string list  = get_unique_passwords(all_data) in 
-  let i: int ref = ref 0 in 
+let analyze_passwords_hashed(files : filename list): unit =
+  let all_data: file_data = merge_data_from_several_files(files) in
+  let unique_passwords: password list = get_unique_passwords(all_data) in
+  let i: int ref = ref 0 in
 
-  while !i < List.length unique_passwords do 
-    let password: string = List.nth unique_passwords !i in 
-    let logins: string list = get_login_for_password password all_data in 
-    if List.length logins > 1 then 
+  while !i < List.length unique_passwords do
+    let password: password = List.nth unique_passwords !i in
+    let logins: login list = get_login_for_password password all_data in
+    if List.length logins > 1 then
       (
       Printf.printf "Password hash '%s' est dans:\n" password;
       let j: int ref = ref 0 in

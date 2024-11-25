@@ -3,18 +3,20 @@
 type login = string
 type password = string
 type filename = string
+type source = string
 type user_info = {
   login: login;
   password: password;
+  source: source
 }
 type file_data = user_info list
 type key_value_list = (login * password) list
 
-let rec parse_lines_to_users (lines: key_value_list) : file_data =
+let rec parse_lines_to_users (lines: key_value_list) (source: filename) : file_data =
   if lines = [] then []
   else
     let (login, password) = List.hd lines in
-    { login; password; } :: parse_lines_to_users(List.tl lines)
+    { login; password; source; } :: parse_lines_to_users (List.tl lines) source
 ;;
 
 let remove_duplicates (data: file_data) : file_data =
@@ -45,7 +47,7 @@ let remove_duplicates (data: file_data) : file_data =
 
 let read_and_parse_file (filename : string) : file_data =
   let lines = read_data_from_file filename in
-  let users = parse_lines_to_users lines in
+  let users = parse_lines_to_users lines filename in
   remove_duplicates users
 ;;
 
@@ -136,8 +138,8 @@ let analyze_data_leaks (filenames: filename list) : unit =
   while !i < List.length unique_logins do
     let login = List.nth unique_logins !i in
     let passwords = get_passwords_for_login login all_data in
-
-    if List.length passwords > 1 then begin
+    (* Printf.printf "%d passwords length\n" (List.length passwords); *)
+    if List.length passwords > 0 then begin
       Printf.printf "\nLogin '%s' found in multiple leaks:\n" login;
       let j = ref 0 in
       while !j < List.length passwords do
@@ -155,7 +157,7 @@ let analyze_data_leaks (filenames: filename list) : unit =
   done
 ;;
 
-(* analyze_data_leaks ["tools/test.txt"; "tools/test2.txt"];; *)
+analyze_data_leaks(["tools/test.txt"; "tools/test2.txt"]);; 
 
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données
 et savoir à quels logins ils sont associés ; *)
@@ -182,17 +184,29 @@ let get_unique_passwords (data: file_data) : password list =
   !result
 ;;
 
-let get_login_for_password (password: password) (data: file_data) : login list =
-  let result: login list ref = ref [] in
+let get_data_by_password (password: password) (data: file_data) : file_data =
+  let result: file_data ref = ref [] in
   let i: int ref = ref 0 in
   while !i < List.length data do
     let entry: user_info = List.nth data !i in
     if entry.password = password then
-      result := entry.login :: !result;
+      result := entry :: !result;
     i := !i + 1
   done;
   !result
 ;;
+
+(* let get_data_by_login (login: login) (data: file_data) : file_data =
+  let result: file_data ref = ref [] in
+  let i: int ref = ref 0 in
+  while !i < List.length data do
+    let entry: user_info = List.nth data !i in
+    if entry.login = login then
+      result := entry :: !result;
+    i := !i + 1
+  done;
+  !result
+;; *)
 
 let analyze_passwords_hashed(files : filename list): unit =
   let all_data: file_data = merge_data_from_several_files(files) in
@@ -201,13 +215,13 @@ let analyze_passwords_hashed(files : filename list): unit =
 
   while !i < List.length unique_passwords do
     let password: password = List.nth unique_passwords !i in
-    let logins: login list = get_login_for_password password all_data in
-    if List.length logins > 1 then
+    let data: file_data = get_data_by_password password all_data in
+    if List.length data > 1 then
       (
       Printf.printf "Password hash '%s' est dans:\n" password;
       let j: int ref = ref 0 in
-      while !j < List.length logins do
-        Printf.printf "Login: %s\n" (List.nth logins !j);
+      while !j < List.length data do
+        Printf.printf "Login: %s from %s\n" (List.nth data !j).login (List.nth data !j).source;
         j := !j + 1
       done;
       );

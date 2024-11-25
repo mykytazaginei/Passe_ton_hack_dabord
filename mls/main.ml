@@ -215,5 +215,29 @@ let analyze_passwords_hashed(files : filename list): unit =
   done
 ;;
 
-
 analyze_passwords_hashed(["tools/test.txt"; "tools/test2.txt"]);;
+
+(* Ex. 4 : Etant donnée une liste de mots de passe en clair, extraire la liste des couples (application web, ´
+login) pour lequel le mot de passe hach´e associ´e au login correspond au hach´e d’un des mots de
+passe en clair. *)
+
+let hash_unecrypted_passwords(passwords: password list): password list =
+  let rec aux(passwords, hashed_passwords: password list * password list): password list = 
+    if passwords = [] then hashed_passwords
+    else 
+      aux (List.tl passwords, hash_password(List.hd passwords) :: hashed_passwords)
+  in
+  aux(passwords, [])
+;;
+
+let rec parse_lines_to_passwords (lines: password list) : password list =
+  if lines = [] then []
+  else
+    let password: password = List.hd lines in
+    password  :: parse_lines_to_passwords(List.tl lines)
+;;
+
+let read_and_parse_file_passwords (filename : string) : password list =
+  let lines : password list = read_passwords_from_file filename in
+  parse_lines_to_passwords lines
+;;

@@ -1,18 +1,14 @@
 #use "tools/tools.ml";;
 
-type login = string
-type password = string
-type filename = string
-type source = string
 type user_info = {
-  login: login;
-  password: password;
-  source: source
+  login: string;
+  password: string;
+  source: string
 }
 type file_data = user_info list
-type key_value_list = (login * password) list
+type key_value_list = (string * string) list
 
-let rec parse_lines_to_users (lines: key_value_list) (source: filename) : file_data =
+let rec parse_lines_to_users (lines: key_value_list) (source: string) : file_data =
   if lines = [] then []
   else
     let (login, password) = List.hd lines in
@@ -57,7 +53,7 @@ let read_and_parse_file (filename : string) : file_data =
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont
 identiques *)
 
-let merge_data_from_several_files (files: filename list) : file_data =
+let merge_data_from_several_files (files: string list) : file_data =
   let result = ref [] in
   let i = ref 0 in
 
@@ -77,7 +73,7 @@ let merge_data_from_several_files (files: filename list) : file_data =
 ;;
 
 (* Helper function to create a list of unique logins *)
-let get_unique_logins (data: file_data) : login list =
+let get_unique_logins (data: file_data) : string list =
   let result = ref [] in
   let i = ref 0 in
 
@@ -100,7 +96,7 @@ let get_unique_logins (data: file_data) : login list =
 ;;
 
 (* Helper function to get all passwords for a login *)
-let get_passwords_for_login (login: login) (data: file_data) : password list =
+let get_passwords_for_login (login: string) (data: file_data) : string list =
   let result = ref [] in
   let i = ref 0 in
 
@@ -114,7 +110,7 @@ let get_passwords_for_login (login: login) (data: file_data) : password list =
 ;;
 
 (* Helper function to check if all passwords in a list are identical *)
-let are_passwords_identical (passwords: password list) : bool =
+let are_passwords_identical (passwords: string list) : bool =
   if List.length passwords <= 1 then true
   else
     let first_password = List.hd passwords in
@@ -130,7 +126,7 @@ let are_passwords_identical (passwords: password list) : bool =
 ;;
 
 (* Main function to analyze data leaks *)
-let analyze_data_leaks (filenames: filename list) : unit =
+let analyze_data_leaks (filenames: string list) : unit =
   let all_data = merge_data_from_several_files filenames in
   let unique_logins = get_unique_logins all_data in
   let i = ref 0 in
@@ -138,9 +134,8 @@ let analyze_data_leaks (filenames: filename list) : unit =
   while !i < List.length unique_logins do
     let login = List.nth unique_logins !i in
     let passwords = get_passwords_for_login login all_data in
-    (* Printf.printf "%d passwords length\n" (List.length passwords); *)
+
     if List.length passwords > 0 then begin
-      Printf.printf "\nLogin '%s' found in multiple leaks:\n" login;
       let j = ref 0 in
       while !j < List.length passwords do
         Printf.printf "Password: %s\n" (List.nth passwords !j);
@@ -157,13 +152,13 @@ let analyze_data_leaks (filenames: filename list) : unit =
   done
 ;;
 
-analyze_data_leaks(["tools/test.txt"; "tools/test2.txt"]);; 
+analyze_data_leaks(["tools/test.txt"; "tools/test2.txt"]);;
 
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données
 et savoir à quels logins ils sont associés ; *)
 (*get unique passwords*)
-let get_unique_passwords (data: file_data) : password list =
-  let result: password list ref = ref [] in
+let get_unique_passwords (data: file_data) : string list =
+  let result: string list ref = ref [] in
   let i: int ref = ref 0 in
 
   while !i < List.length data do
@@ -184,7 +179,7 @@ let get_unique_passwords (data: file_data) : password list =
   !result
 ;;
 
-let get_data_by_password (password: password) (data: file_data) : file_data =
+let get_data_by_password (password: string) (data: file_data) : file_data =
   let result: file_data ref = ref [] in
   let i: int ref = ref 0 in
   while !i < List.length data do
@@ -196,7 +191,7 @@ let get_data_by_password (password: password) (data: file_data) : file_data =
   !result
 ;;
 
-(* let get_data_by_login (login: login) (data: file_data) : file_data =
+(* let get_data_by_login (login: string) (data: file_data) : file_data =
   let result: file_data ref = ref [] in
   let i: int ref = ref 0 in
   while !i < List.length data do
@@ -208,13 +203,13 @@ let get_data_by_password (password: password) (data: file_data) : file_data =
   !result
 ;; *)
 
-let analyze_passwords_hashed(files : filename list): unit =
+let analyze_passwords_hashed(files : string list): unit =
   let all_data: file_data = merge_data_from_several_files(files) in
-  let unique_passwords: password list = get_unique_passwords(all_data) in
+  let unique_passwords: string list = get_unique_passwords(all_data) in
   let i: int ref = ref 0 in
 
   while !i < List.length unique_passwords do
-    let password: password = List.nth unique_passwords !i in
+    let password: string = List.nth unique_passwords !i in
     let data: file_data = get_data_by_password password all_data in
     if List.length data > 1 then
       (
@@ -232,26 +227,26 @@ let analyze_passwords_hashed(files : filename list): unit =
 analyze_passwords_hashed(["tools/test.txt"; "tools/test2.txt"]);;
 
 (* Ex. 4 : Etant donnée une liste de mots de passe en clair, extraire la liste des couples (application web, ´
-login) pour lequel le mot de passe hach´e associ´e au login correspond au hach´e d’un des mots de
+login) pour lequel le mot de passe hach´e associ´e au login correspond au hach´e d'un des mots de
 passe en clair. *)
 
-let hash_unecrypted_passwords(passwords: password list): password list =
-  let rec aux(passwords, hashed_passwords: password list * password list): password list = 
+let hash_unecrypted_passwords(passwords: string list): string list =
+  let rec aux(passwords, hashed_passwords: string list * string list): string list =
     if passwords = [] then hashed_passwords
-    else 
+    else
       aux (List.tl passwords, hash_password(List.hd passwords) :: hashed_passwords)
   in
   aux(passwords, [])
 ;;
 
-let rec parse_lines_to_passwords (lines: password list) : password list =
+let rec parse_lines_to_passwords (lines: string list) : string list =
   if lines = [] then []
   else
-    let password: password = List.hd lines in
+    let password: string = List.hd lines in
     password  :: parse_lines_to_passwords(List.tl lines)
 ;;
 
-let read_and_parse_file_passwords (filename : string) : password list =
-  let lines : password list = read_passwords_from_file filename in
+let read_and_parse_file_passwords (filename : string) : string list =
+  let lines : string list = read_passwords_from_file filename in
   parse_lines_to_passwords lines
 ;;

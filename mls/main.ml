@@ -24,31 +24,49 @@ let rec parse_lines_to_users (lines: key_value_list) (source: string) : file_dat
     let (login, password) = List.hd lines in
     { login; password; source; } :: parse_lines_to_users (List.tl lines) source
 ;;
+(* The process now is:
+1. Sort the data (O(n log n))
+2. Remove duplicates from sorted data (O(n))
+3. Total complexity remains O(n log n) *)
+let quick_sort (data: file_data) : file_data =
+  let rec aux (lst: file_data) : file_data =
+    if lst = [] then []
+    else
+      let pivot = List.hd lst in
+      let rest = List.tl lst in
+
+      let rec partition (lst: file_data) (less: file_data) (greater: file_data) : file_data * file_data =
+        if lst = [] then (less, greater)
+        else
+          let current = List.hd lst in
+          if current.login < pivot.login then
+            partition (List.tl lst) (current :: less) greater
+          else if current.login > pivot.login then
+            partition (List.tl lst) less (current :: greater)
+          else
+            partition (List.tl lst) less greater
+      in
+
+      let (less, greater) = partition rest [] [] in
+      aux less @ [pivot] @ aux greater
+  in
+  aux data
+;;
 
 let remove_duplicates (data: file_data) : file_data =
-  let result = ref [] in
-  let i = ref 0 in
+  let sorted_data = quick_sort data in
 
-  while !i < List.length data do
-    let current = List.nth data !i in
-    let is_duplicate = ref false in
-    let j = ref 0 in
-
-    (* Check if this login already exists in result *)
-    while !j < List.length !result do
-      let existing = List.nth !result !j in
-      if existing.login = current.login then
-        is_duplicate := true;
-      j := !j + 1
-    done;
-
-    (* Add to result only if not a duplicate *)
-    if not !is_duplicate then
-      result := current :: !result;
-
-    i := !i + 1
-  done;
-  !result
+  let rec aux (data: file_data) (acc: file_data) : file_data =
+    if data = [] then acc
+    else
+      let current = List.hd data in
+      let rest = List.tl data in
+      if rest = [] || current.login <> (List.hd rest).login then
+        aux rest (current :: acc)
+      else
+        aux rest acc
+  in
+  aux sorted_data []
 ;;
 
 let read_and_parse_file (filename : string) : file_data =
@@ -185,7 +203,7 @@ let get_data_by_password (password: string) (data: file_data) : file_data =
 
 let rec print_password_data (data: file_data) : unit =
   if data = [] then ()
-  else 
+  else
     let entry = List.hd data in
     Printf.printf "Login: %s from %s\n" entry.login entry.source;
     print_password_data (List.tl data)
@@ -225,34 +243,16 @@ let hash_unecrypted_passwords(passwords: string list): string list =
   aux(passwords, [])
 ;;
 
-let read_and_hash_file_passwords (filename : string) : string list =
+let rec parse_lines_to_passwords (lines: string list) : string list =
+  if lines = [] then []
+  else
+    let password: string = List.hd lines in
+    password  :: parse_lines_to_passwords(List.tl lines)
+;;
+
+let read_and_parse_file_passwords (filename : string) : string list =
   let lines : string list = read_passwords_from_file filename in
-  hash_unecrypted_passwords lines
+  parse_lines_to_passwords lines
 ;;
 
-let analyze_hash_with_unhashed_passwords(unhashed_passwords_file, all_data_files: string * string list) =
-  let hashed_passwords = read_and_hash_file_passwords unhashed_passwords_file in
-  let all_data = merge_data_from_several_files all_data_files in
-  
-  let rec aux (hashed_passwords: string list) : unit =
-    if hashed_passwords = [] then ()
-    else
-      let hashed_password = List.hd hashed_passwords in
-      let data = get_data_by_password hashed_password all_data in
-      if data <> [] then
-        (
-          Printf.printf "Password hash '%s' est dans:\n" hashed_password;
-          print_password_data data
-        );
-      aux (List.tl hashed_passwords)
-  in
-  aux hashed_passwords
-;;
-
-analyze_hash_with_unhashed_passwords("tools/french_passwords_top20000.txt", ["tools/depensetout01.txt"; "tools/depensetout02.txt"]);;
-
-(* TODO: *)
-(* 1. Упростить по возможности код *)
-(* 2. Документацию *)
-(* 3. Тесты *)
-(* 4. Создатели функций (везде по два) *)
+read_and_parse_file_passwords("tools/test3.txt");;

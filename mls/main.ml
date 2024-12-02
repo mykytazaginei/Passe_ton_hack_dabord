@@ -185,7 +185,7 @@ let get_data_by_password (password: string) (data: file_data) : file_data =
 
 let rec print_password_data (data: file_data) : unit =
   if data = [] then ()
-  else
+  else 
     let entry = List.hd data in
     Printf.printf "Login: %s from %s\n" entry.login entry.source;
     print_password_data (List.tl data)
@@ -225,14 +225,34 @@ let hash_unecrypted_passwords(passwords: string list): string list =
   aux(passwords, [])
 ;;
 
-let rec parse_lines_to_passwords (lines: string list) : string list =
-  if lines = [] then []
-  else
-    let password: string = List.hd lines in
-    password  :: parse_lines_to_passwords(List.tl lines)
+let read_and_hash_file_passwords (filename : string) : string list =
+  let lines : string list = read_passwords_from_file filename in
+  hash_unecrypted_passwords lines
 ;;
 
-let read_and_parse_file_passwords (filename : string) : string list =
-  let lines : string list = read_passwords_from_file filename in
-  parse_lines_to_passwords lines
+let analyze_hash_with_unhashed_passwords(unhashed_passwords_file, all_data_files: string * string list) =
+  let hashed_passwords = read_and_hash_file_passwords unhashed_passwords_file in
+  let all_data = merge_data_from_several_files all_data_files in
+  
+  let rec aux (hashed_passwords: string list) : unit =
+    if hashed_passwords = [] then ()
+    else
+      let hashed_password = List.hd hashed_passwords in
+      let data = get_data_by_password hashed_password all_data in
+      if data <> [] then
+        (
+          Printf.printf "Password hash '%s' est dans:\n" hashed_password;
+          print_password_data data
+        );
+      aux (List.tl hashed_passwords)
+  in
+  aux hashed_passwords
 ;;
+
+analyze_hash_with_unhashed_passwords("tools/french_passwords_top20000.txt", ["tools/depensetout01.txt"; "tools/depensetout02.txt"]);;
+
+(* TODO: *)
+(* 1. Упростить по возможности код *)
+(* 2. Документацию *)
+(* 3. Тесты *)
+(* 4. Создатели функций (везде по два) *)

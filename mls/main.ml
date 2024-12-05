@@ -67,14 +67,8 @@ let remove_duplicates(data: file_data): file_data =
 
 let read_and_parse_file(filename: string): file_data =
   let lines = read_data_from_file filename in
-  let users = parse_lines_to_users (lines, filename) in
-  remove_duplicates users
+  parse_lines_to_users (lines, filename)
 ;;
-
-read_and_parse_file(["depensetout01.txt"; "depensetout02.txt"; "tetedamis01.txt"]);;
-
-(* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
-correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)
 
 let merge_data_from_several_files(files: string list): file_data =
   let rec aux(files, acc: string list * file_data): file_data =
@@ -86,6 +80,16 @@ let merge_data_from_several_files(files: string list): file_data =
   in
   aux (files, [])
 ;;
+
+let load_and_process_files(filenames: string list): file_data =
+  let data = merge_data_from_several_files filenames in
+  remove_duplicates data
+;;
+
+load_and_process_files(["tools/depensetout01.txt"; "tools/depensetout02.txt"]);;
+
+(* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
+correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)
 
 let get_unique_logins(data: file_data): string list =
   let rec aux(data, acc: file_data * string list): string list =

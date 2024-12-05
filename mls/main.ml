@@ -52,7 +52,7 @@ let quick_sort(data: file_data): file_data =
 let remove_duplicates(data: file_data): file_data =
   let sorted_data = quick_sort data in
 
-  let rec aux(data, acc: file_data * file_data): file_data =G
+  let rec aux(data, acc: file_data * file_data): file_data =
     if data = [] then acc
     else
       let current = List.hd data in
@@ -70,6 +70,8 @@ let read_and_parse_file(filename: string): file_data =
   let users = parse_lines_to_users (lines, filename) in
   remove_duplicates users
 ;;
+
+read_and_parse_file(["depensetout01.txt"; "depensetout02.txt"; "tetedamis01.txt"]);;
 
 (* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)

@@ -8,6 +8,9 @@ type user_info = {
 type file_data = user_info list
 type key_value_list = (string * string) list
 
+(* Ex. 1 : fusionner dans une même variable les informations contenues dans les fichiers correspondant à
+plusieurs fuites d'une même application en éliminant les doublons (même login et même mot de passe) *)
+
 let rec is_in_list(item, list: string * string list): bool =
   if list = [] then false
   else if item = List.hd list then true
@@ -49,7 +52,7 @@ let quick_sort(data: file_data): file_data =
 let remove_duplicates(data: file_data): file_data =
   let sorted_data = quick_sort data in
 
-  let rec aux(data, acc: file_data * file_data): file_data =
+  let rec aux(data, acc: file_data * file_data): file_data =G
     if data = [] then acc
     else
       let current = List.hd data in
@@ -67,6 +70,9 @@ let read_and_parse_file(filename: string): file_data =
   let users = parse_lines_to_users (lines, filename) in
   remove_duplicates users
 ;;
+
+(* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
+correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)
 
 let merge_data_from_several_files(files: string list): file_data =
   let rec aux(files, acc: string list * file_data): file_data =
@@ -105,6 +111,7 @@ let get_entries_for_login(login, data: string * file_data): user_info list =
   aux (data, [])
 ;;
 
+(* Helper function to check if all passwords in a list are identical *)
 let are_passwords_identical(passwords: string list): bool =
   let rec aux(passwords: string list): bool =
     if List.length passwords <= 1 then true
@@ -157,6 +164,8 @@ let analyze_data_leaks(filenames: string list): unit =
 ;;
 
 analyze_data_leaks(["tools/test.txt"; "tools/test2.txt"]);;
+
+(* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données et savoir à quels logins ils sont associés ; *)
 
 let get_unique_passwords(data: file_data): string list =
   let rec aux(data, acc: file_data * string list): string list =
@@ -212,6 +221,8 @@ let analyze_passwords_hashed(files: string list): unit =
 ;;
 
 analyze_passwords_hashed(["tools/test.txt"; "tools/test2.txt"]);;
+
+(* Ex. 4 : Etant donnée une liste de mots de passe en clair, extraire la liste des couples (application web, login) pour lequel le mot de passe haché associé au login correspond au haché d'un des mots de passe en clair. *)
 
 let hash_unecrypted_passwords(passwords: string list): string list =
   let rec aux(passwords, hashed_passwords: string list * string list): string list =

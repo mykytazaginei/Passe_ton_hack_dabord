@@ -86,7 +86,7 @@ let load_and_process_files(filenames: string list): file_data =
   remove_duplicates data
 ;;
 
-load_and_process_files(["tools/depensetout01.txt"; "tools/depensetout02.txt"]);;
+load_and_process_files(["files/depensetout01.txt"; "files/depensetout02.txt"]);;
 
 (* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)
@@ -169,7 +169,7 @@ let analyze_logins(filenames: string list): unit =
   analyze_data_leaks_rec (unique_logins, all_data)
 ;;
 
-analyze_logins(["tools/slogram01.txt"; "tools/slogram02.txt"]);;
+analyze_logins(["files/slogram01.txt"; "files/slogram02.txt"]);;
 
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données et savoir à quels logins ils sont associés ; *)
 
@@ -215,7 +215,8 @@ let rec analyze_passwords_hashed_rec(passwords, all_data: string list * file_dat
     if List.length data > 1 then
       (
         Printf.printf "Password hash '%s' est dans:\n" password;
-        print_password_data data
+        print_password_data data;
+        Printf.printf "-------------------------\n"
       );
     analyze_passwords_hashed_rec (List.tl passwords, all_data)
 ;;
@@ -226,7 +227,7 @@ let analyze_passwords_hashed(files: string list): unit =
   analyze_passwords_hashed_rec (unique_passwords, all_data)
 ;;
 
-analyze_passwords_hashed(["tools/test.txt"; "tools/test2.txt"]);;
+analyze_passwords_hashed(["files/tetedamis01.txt"; "files/tetedamis02.txt"]);;
 
 (* Ex. 4 : Etant donnée une liste de mots de passe en clair, extraire la liste des couples (application web, login) pour lequel le mot de passe haché associé au login correspond au haché d'un des mots de passe en clair. *)
 
@@ -239,31 +240,28 @@ let hash_unecrypted_passwords(passwords: string list): string list =
   aux(passwords, [])
 ;;
 
-let read_and_hash_file_passwords(filename: string): string list =
-  let lines : string list = read_passwords_from_file filename in
-  hash_unecrypted_passwords lines
-;;
-
 let analyze_hash_with_unhashed_passwords(unhashed_passwords_file, all_data_files: string * string list) =
-  let hashed_passwords = read_and_hash_file_passwords unhashed_passwords_file in
+  let unhashed_passwords = read_passwords_from_file unhashed_passwords_file in
   let all_data = merge_data_from_several_files all_data_files in
 
-  let rec aux(hashed_passwords: string list): unit =
-    if hashed_passwords = [] then ()
+  let rec aux(unhashed_passwords, hashed_passwords: string list * string list): unit =
+    if unhashed_passwords = [] then ()
     else
+      let unhashed_password = List.hd unhashed_passwords in
       let hashed_password = List.hd hashed_passwords in
       let data = get_data_by_password (hashed_password, all_data) in
       if data <> [] then
         (
-          Printf.printf "Password hash '%s' est dans:\n" hashed_password;
-          print_password_data data
+          Printf.printf "Password '%s' (hash: '%s') est dans:\n" unhashed_password hashed_password;
+          print_password_data data;
+          Printf.printf "-------------------------\n"
         );
-      aux (List.tl hashed_passwords)
+      aux (List.tl unhashed_passwords, List.tl hashed_passwords)
   in
-  aux hashed_passwords
+  aux (unhashed_passwords, hash_unecrypted_passwords unhashed_passwords)
 ;;
 
-(* analyze_hash_with_unhashed_passwords("tools/french_passwords_top20000.txt", ["tools/depensetout01.txt"; "tools/depensetout02.txt"]);; *)
+analyze_hash_with_unhashed_passwords("files/french_passwords_top20000.txt", ["files/depensetout01.txt"; "files/depensetout02.txt"; "files/slogram01.txt"; "files/slogram02.txt"]);; 
 
 (* TODO: *)
 (* 1. Упростить по возможности код *)

@@ -163,13 +163,13 @@ let rec analyze_data_leaks_rec(logins, all_data: string list * file_data): unit 
     analyze_data_leaks_rec (List.tl logins, all_data)
 ;;
 
-let analyze_data_leaks(filenames: string list): unit =
+let analyze_logins(filenames: string list): unit =
   let all_data = merge_data_from_several_files filenames in
   let unique_logins = get_unique_logins all_data in
   analyze_data_leaks_rec (unique_logins, all_data)
 ;;
 
-analyze_data_leaks(["tools/test.txt"; "tools/test2.txt"]);;
+analyze_logins(["tools/slogram01.txt"; "tools/slogram02.txt"]);;
 
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données et savoir à quels logins ils sont associés ; *)
 

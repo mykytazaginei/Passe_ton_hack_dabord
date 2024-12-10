@@ -250,12 +250,12 @@ let rec analyze_data_leaks_rec(logins, all_data: string list * file_data): unit 
   else
     let login = List.hd logins in
     let entries = get_entries_for_login (login, all_data) in
-    if List.length entries > 1 then begin
+    if List.length entries > 1 then (
       Printf.printf "Login '%s' trouvé dans plusieurs fuites:\n" login;
       let passwords = process_entries entries in
       let identical = are_passwords_identical passwords in
       print_leak_results (login, passwords, identical)
-    end;
+    );
     analyze_data_leaks_rec (List.tl logins, all_data)
 ;;
 

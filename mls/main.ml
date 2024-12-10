@@ -11,7 +11,7 @@
   [source]: Source/origine des données utilisateur
   [file_data] représente une collection d'enregistrements user_info stockés sous forme de liste.
   [key_value_list] est utilisé pour stocker des paires clé-valeur de type string dans une liste.
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 type user_info = {
   login: string;
@@ -24,12 +24,12 @@ type key_value_list = (string * string) list
 (* Ex. 1 : fusionner dans une même variable les informations contenues dans les fichiers correspondant à
 plusieurs fuites d'une même application en éliminant les doublons (même login et même mot de passe) *)
 
-(** 
+(**
   Vérifie si un élément est présent dans une liste de chaînes de caractères.
   @param item La chaîne à rechercher dans la liste
-  @param list La liste de chaînes dans laquelle effectuer la recherche 
+  @param list La liste de chaînes dans laquelle effectuer la recherche
   @return Renvoie true si l'élément est trouvé dans la liste, false sinon
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let rec is_in_list(item, list: string * string list): bool =
   if list = [] then false
@@ -37,12 +37,12 @@ let rec is_in_list(item, list: string * string list): bool =
   else is_in_list (item, List.tl list)
 ;;
 
-(** 
+(**
   Convertit récursivement une liste de paires clé-valeur [(login, password)] et une chaîne source en une liste d'enregistrements utilisateur.
   @param lines Liste de tuples contenant les paires login et mot de passe
   @param source Chaîne indiquant la source/origine des données utilisateur
   @return Liste d'enregistrements file_data, où chaque enregistrement contient login, mot de passe et source
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let rec parse_lines_to_users(lines, source: key_value_list * string): file_data =
   if lines = [] then []
@@ -51,7 +51,7 @@ let rec parse_lines_to_users(lines, source: key_value_list * string): file_data 
     { login; password; source; } :: parse_lines_to_users (List.tl lines, source)
 ;;
 
-(** 
+(**
   Trie une liste de données de fichiers en utilisant l'algorithme du tri rapide.
   @param data La liste des données de fichiers à trier.
   @return La liste triée des données de fichiers.
@@ -82,11 +82,11 @@ let quick_sort(data: file_data): file_data =
   aux data
 ;;
 
-(** 
+(**
   Supprime les doublons dans une liste de données de fichiers.
   @param data La liste des données de fichiers potentiellement avec des doublons
   @return La liste des données de fichiers sans doublons basés sur le login utilisateur
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let remove_duplicates(data: file_data): file_data =
   let sorted_data = quick_sort data in
@@ -104,22 +104,22 @@ let remove_duplicates(data: file_data): file_data =
   aux (sorted_data, [])
 ;;
 
-(** 
+(**
   Lit un fichier et le convertit en file_data.
   @param filename Le nom du fichier à lire
   @return Les données du fichier sous forme de file_data avec login, mot de passe et source remplis pour chaque utilisateur
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let read_and_parse_file(filename: string): file_data =
   let lines = read_data_from_file filename in
   parse_lines_to_users (lines, filename)
 ;;
 
-(** 
+(**
   Fusionne les données de plusieurs fichiers en une seule liste.
   @param files Liste des noms de fichiers à fusionner
   @return Les données fusionnées de tous les fichiers sous forme de file_data sans suppression des doublons pour l'instant
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let merge_data_from_several_files(files: string list): file_data =
   let rec aux(files, acc: string list * file_data): file_data =
@@ -132,11 +132,11 @@ let merge_data_from_several_files(files: string list): file_data =
   aux (files, [])
 ;;
 
-(** 
+(**
   Charge et traite les fichiers pour fusionner les données et supprimer les doublons.
   @param filenames Liste des noms de fichiers à traiter
   @return Les données fusionnées sans doublons sous forme de file_data triée par login utilisateur
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
+  @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
 let load_and_process_files(filenames: string list): file_data =
   let data = merge_data_from_several_files filenames in
@@ -148,26 +148,7 @@ load_and_process_files(["files/depensetout01.txt"; "files/depensetout02.txt"]);;
 (* Ex. 2 : déterminer si un même login est présent dans plusieurs fuites de données (donc dans les fichiers
 correspondant à plusieurs applications web) et dans ce cas déterminer si les mots de passe sont identiques *)
 
-(** 
-  Récupère la liste des logins uniques à partir des données.
-  @param data Les données de fichiers
-  @return La liste des logins uniques présents dans les données fournies sans doublons
-  @author Mykyta ZAGINEI, Dmytro HONCHARENKO 
-*)
-let get_unique_logins(data: file_data): string list =
-  let rec aux(data, acc: file_data * string list): string list =
-    if data = [] then acc
-    else
-      let current_login = (List.hd data).login in
-      if not (is_in_list (current_login, acc)) then
-        aux (List.tl data, current_login :: acc)
-      else
-        aux (List.tl data, acc)
-  in
-  aux (data, [])
-;;
-
-(** 
+(**
   Récupère toutes les entrées pour un login donné.
   @param login Le login à rechercher dans les données
   @param data Les données de fichiers
@@ -187,7 +168,7 @@ let get_entries_for_login(login, data: string * file_data): user_info list =
   aux (data, [])
 ;;
 
-(** 
+(**
   Vérifie si tous les mots de passe dans une liste sont identiques.
   @param passwords La liste des mots de passe à comparer
   @return Renvoie true si tous les mots de passe sont identiques, false sinon. Si la liste est vide ou contient un seul élément, renvoie true par défaut car aucun conflit n'est possible dans ce cas
@@ -205,7 +186,7 @@ let are_passwords_identical(passwords: string list): bool =
   aux passwords
 ;;
 
-(** 
+(**
   Traite les entrées pour un login et retourne la liste des mots de passe associés.
   @param entries La liste des enregistrements user_info pour un login spécifique
   @return La liste des mots de passe associés au login donné extraits des différentes sources/fuites de données. Affiche également les sources et mots de passe à l'écran pour l'utilisateur
@@ -223,7 +204,7 @@ let process_entries(entries: user_info list): string list =
   aux (entries, [])
 ;;
 
-(** 
+(**
   Affiche les résultats de l'analyse pour un login spécifique.
   @param login Le login analysé
   @param passwords La liste des mots de passe associés au login
@@ -238,28 +219,27 @@ let print_leak_results(login, passwords, identical: string * string list * bool)
   Printf.printf "-------------------------\n"
 ;;
 
-(** 
+(**
   Analyse récursivement les logins pour détecter ceux présents dans plusieurs fuites et vérifier si les mots de passe sont identiques.
   @param logins La liste des logins uniques à analyser
   @param all_data Toutes les données fusionnées des différentes sources/fuites de données
   @return Ne retourne rien mais effectue l'affichage des résultats de l'analyse pour chaque login concerné. Permet de détecter les logins compromis sur plusieurs fuites et d'évaluer le niveau de risque (même mot de passe ou non entre les fuites)
   @author Mykyta ZAGINEI, Dmytro HONCHARENKO
 *)
-let rec analyze_data_leaks_rec(logins, all_data: string list * file_data): unit =
+let rec analyze_data_leaks_rec(logins, all_data: file_data * file_data): unit =
   if logins = [] then ()
   else
-    let login = List.hd logins in
-    let entries = get_entries_for_login (login, all_data) in
+    let current = List.hd logins in
+    let entries = get_entries_for_login (current.login, all_data) in
     if List.length entries > 1 then (
-      Printf.printf "Login '%s' trouvé dans plusieurs fuites:\n" login;
       let passwords = process_entries entries in
       let identical = are_passwords_identical passwords in
-      print_leak_results (login, passwords, identical)
+      print_leak_results (current.login, passwords, identical)
     );
     analyze_data_leaks_rec (List.tl logins, all_data)
 ;;
 
-(** 
+(**
   Lance l'analyse des logins sur les fichiers fournis.
   @param filenames Liste des noms de fichiers à analyser
   @return Ne retourne rien mais effectue l'analyse complète des logins sur les différentes fuites de données fournies. Permet d'identifier les logins concernés par plusieurs fuites et de prendre des mesures de sécurité appropriées si nécessaire (changement de mot de passe, sensibilisation des utilisateurs, etc.)
@@ -267,15 +247,15 @@ let rec analyze_data_leaks_rec(logins, all_data: string list * file_data): unit 
 *)
 let analyze_logins(filenames: string list): unit =
   let all_data = merge_data_from_several_files filenames in
-  let unique_logins = get_unique_logins all_data in
-  analyze_data_leaks_rec (unique_logins, all_data)
+  let unique_records = remove_duplicates all_data in
+  analyze_data_leaks_rec (unique_records, all_data)
 ;;
 
 analyze_logins(["files/slogram01.txt"; "files/slogram02.txt"]);;
 
 (* Ex. 3 : déterminer si un même mot de passe haché est présent dans plusieurs fuites de données et savoir à quels logins ils sont associés ; *)
 
-(** 
+(**
   Récupère la liste des mots de passe uniques à partir des données.
   @param data Les données de fichiers
   @return La liste des mots de passe uniques présents dans les données fournies sans doublons, permet de détecter les mots de passe les plus communs ou les plus compromis entre les différentes fuites de données analysées, ce qui peut aider à renforcer les politiques de sécurité et à sensibiliser les utilisateurs concernés
@@ -294,7 +274,7 @@ let get_unique_passwords(data: file_data): string list =
   aux (data, [])
 ;;
 
-(** 
+(**
   Récupère les données associées à un mot de passe donné.
   @param password Le mot de passe haché à rechercher
   @param data Les données de fichiers
@@ -314,7 +294,7 @@ let get_data_by_password(password, data: string * file_data): file_data =
   aux (data, [])
 ;;
 
-(** 
+(**
   Affiche les données pour un mot de passe donné.
   @param data Les enregistrements user_info à afficher
   @return Ne retourne rien mais affiche à l'écran les logins et sources associés au mot de passe haché donné. Permet de visualiser les conséquences potentielles d'une fuite de mot de passe et de prendre des mesures correctives (changement de mot de passe, renforcement de la sécurité, etc.)
@@ -328,7 +308,7 @@ let rec print_password_data(data: file_data): unit =
     print_password_data (List.tl data)
 ;;
 
-(** 
+(**
   Analyse récursivement les mots de passe hachés pour détecter ceux présents dans plusieurs fuites.
   @param passwords La liste des mots de passe hachés uniques à analyser
   @param all_data Toutes les données fusionnées des différentes sources/fuites de données
@@ -349,7 +329,7 @@ let rec analyze_passwords_hashed_rec(passwords, all_data: string list * file_dat
     analyze_passwords_hashed_rec (List.tl passwords, all_data)
 ;;
 
-(** 
+(**
   Lance l'analyse des mots de passe hachés sur les fichiers fournis.
   @param files Liste des noms de fichiers à analyser
   @return Ne retourne rien mais effectue l'analyse complète des mots de passe hachés sur les différentes fuites de données fournies. Aide à identifier les mots de passe les plus compromis et à prendre des mesures de sécurité appropriées si nécessaire
@@ -365,7 +345,7 @@ analyze_passwords_hashed(["files/tetedamis01.txt"; "files/tetedamis02.txt"]);;
 
 (* Ex. 4 : Etant donnée une liste de mots de passe en clair, extraire la liste des couples (application web, login) pour lequel le mot de passe haché associé au login correspond au haché d'un des mots de passe en clair. *)
 
-(** 
+(**
   Hache une liste de mots de passe en clair.
   @param passwords La liste des mots de passe en clair à hacher
   @return La liste des mots de passe hachés correspondants. Utilise la fonction hash_password du module tools.ml pour effectuer le hachage
@@ -380,7 +360,7 @@ let hash_unecrypted_passwords(passwords: string list): string list =
   aux(passwords, [])
 ;;
 
-(** 
+(**
   Analyse les mots de passe hachés à partir d'une liste de mots de passe en clair et affiche les couples (application web, login).
   @param unhashed_passwords_file Le nom du fichier contenant les mots de passe en clair
   @param all_data_files La liste des fichiers de données à analyser
@@ -408,4 +388,4 @@ let analyze_hash_with_unhashed_passwords(unhashed_passwords_file, all_data_files
   aux (unhashed_passwords, hash_unecrypted_passwords unhashed_passwords)
 ;;
 
-analyze_hash_with_unhashed_passwords("files/french_passwords_top20000.txt", ["files/depensetout02.txt"; "files/slogram01.txt"]);; 
+analyze_hash_with_unhashed_passwords("files/french_passwords_top20000.txt", ["files/depensetout02.txt"; "files/slogram01.txt"]);;
